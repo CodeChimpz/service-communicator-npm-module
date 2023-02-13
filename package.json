@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "patch": "git add . && git commit -m 'patch' && npm version patch && npm publish",
+    "patch-git" : "npm version patch && npm publish",
     "prepublishOnly": "npm run build",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
