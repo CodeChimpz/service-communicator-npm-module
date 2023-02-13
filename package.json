@@ -1,16 +1,19 @@
 {
-  "name": "service-to-server",
-  "version": "1.0.0",
+  "name": "service-registry",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
+    "patch": "git add . && git commit -m 'patch' && npm version patch && npm publish",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.2.2",
-    "logger": "file:../logger"
+    "etcd3": "^1.1.0",
+    "mein-winston-logger": "^1.0.6"
   }
 }

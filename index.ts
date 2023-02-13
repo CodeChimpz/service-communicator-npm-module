@@ -1,51 +1,66 @@
 import axios from "axios";
 import {LoggerService, WinstonLoggerService} from "logger";
-
-export interface GatewayConfigOptions {
-    url: string
+import {Etcd3, IOptions} from "etcd3";
+//type / IF declarations
+//data that the service will send to the etcd registry
+export interface IRegistryData {
+    //the url of the service (you gotta know it somehow)
+    serviceUrl: string
     //how the gateway will refer to the service when registering endpoints
     refer: string
-    //api key given by the gateway to the service
-    api_key: string
     //endpoints
-    endpoints: ApiObjectT
-    //for testing on localhost when Origin header is not sent
-    origin?: string
+    endpoints: TApiObjectT
 }
 
-// export type HttpMethodT = 'get' | 'post' | 'delete' | 'put'
-export type ApiObjectT = {
+export interface IConfigOptions extends IOptions {
+}
+
+//
+export type TApiObjectT = {
     [key: string]: string
 }
 
-
-export class GatewayCommunicator {
+//
+export class ServiceRegistry {
+    etcd: Etcd3
+    namespace: string = 'services/'
+    // config: GatewayConfigOptions
+    //util dependencies
     logger: LoggerService
-    config: GatewayConfigOptions
 
-    constructor(config: GatewayConfigOptions) {
+    constructor(config: IConfigOptions,) {
         this.logger = new WinstonLoggerService({
             path: "./logs",
             console: true,
             maxsize: 59999
         })
-        this.config = config
+        // this.config = config
+        this.etcd = new Etcd3({
+            auth: config.auth,
+            hosts: config.hosts,
+            credentials: config?.credentials,
+        })
     }
 
-    //send all the endpoint routes passed on init to the gateway endpoint registration checkpoint
-    async sync() {
-        try {
-            const response = await axios.post(this.config.url, {
-                auth: this.config.api_key,
-                service: this.config.refer,
-                endpoints: this.config.endpoints,
-                origin: this.config.origin,
-            }, {})
-            this.logger.http.info(response.data, {status: response.status})
-        } catch (e: any) {
-            this.logger.http.error(e)
-        }
+    async startService(gateway_url: string, data: IRegistryData) {
+        const nmspc = this.etcd.namespace(this.namespace).namespace(data.refer)
+        await nmspc.put('name').value(data.serviceUrl).exec()
+        await nmspc.put('endpoints').value(JSON.stringify(data.endpoints)).exec()
     }
+
+    //get from registry url for endpoint {service}.{path...}.{method}
+    async route(endpoint_token: string) {
+        const parsed_token = endpoint_token.split('.')
+        const service = parsed_token[0]
+        const endpoint = parsed_token.slice(1).join('.')
+        const nmspc = this.etcd.namespace(this.namespace).namespace(service)
+        const name = await nmspc.get('name')
+        const endpoints = await nmspc.get('endpoints').json()
+        const path = JSON.parse(JSON.stringify(endpoints))[endpoint]
+        if (!(path && name)) throw new Error('No endpoint registered for this token')
+        return name + path
+    }
+
 
 }
 
