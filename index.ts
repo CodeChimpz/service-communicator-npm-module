@@ -1,5 +1,5 @@
 import axios from "axios";
-import {LoggerService, WinstonLoggerService} from "logger";
+import {LoggerService, WinstonLoggerService} from "mein-winston-logger";
 import {Etcd3, IOptions} from "etcd3";
 //type / IF declarations
 //data that the service will send to the etcd registry
