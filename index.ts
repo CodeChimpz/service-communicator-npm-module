@@ -56,7 +56,6 @@ export class ServiceRegistry {
         const nmspc = this.etcd.namespace(this.namespace).namespace(service)
         const name = await nmspc.get('name')
         const endpoints = await nmspc.get('endpoints').json()
-        console.log(endpoints, name)
         if (!(endpoints && name)) throw new Error('No endpoint registered for this token')
         const path = JSON.parse(JSON.stringify(endpoints))[endpoint]
         return name + path
