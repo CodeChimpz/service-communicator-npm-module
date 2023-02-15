@@ -42,7 +42,7 @@ export class ServiceRegistry {
         })
     }
 
-    async startService(gateway_url: string, data: IRegistryData) {
+    async startService(data: IRegistryData) {
         const nmspc = this.etcd.namespace(this.namespace).namespace(data.refer)
         await nmspc.put('name').value(data.serviceUrl).exec()
         await nmspc.put('endpoints').value(JSON.stringify(data.endpoints)).exec()
@@ -56,6 +56,7 @@ export class ServiceRegistry {
         const nmspc = this.etcd.namespace(this.namespace).namespace(service)
         const name = await nmspc.get('name')
         const endpoints = await nmspc.get('endpoints').json()
+        console.log(endpoints, name)
         if (!(endpoints && name)) throw new Error('No endpoint registered for this token')
         const path = JSON.parse(JSON.stringify(endpoints))[endpoint]
         return name + path
