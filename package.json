@@ -15,6 +15,7 @@
   "dependencies": {
     "axios": "^1.2.2",
     "etcd3": "^1.1.0",
-    "mein-winston-logger": "^1.0.6"
+    "mein-winston-logger": "^1.0.6",
+    "node-etcd": "^7.0.0"
   }
 }
