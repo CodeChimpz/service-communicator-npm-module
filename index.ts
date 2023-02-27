@@ -34,7 +34,7 @@ export class ServiceRegistry {
     logger: LoggerService
     data: IRegistryData | undefined
 
-    constructor(config: IConfigOptions, namespace?: 'north' | 'east-west', data?: IRegistryData) {
+    constructor(config: IConfigOptions, data?: IRegistryData, orientation?: 'north'|'east') {
         this.logger = new WinstonLoggerService({
             path: "./logs",
             console: true,
@@ -49,7 +49,7 @@ export class ServiceRegistry {
         if(data){
             this.data = data
         }
-        this.namespace = namespace || 'north'
+        this.namespace = orientation || 'north'
     }
 
     //notify the registry of server spin up, upload it's data for other service discovery
