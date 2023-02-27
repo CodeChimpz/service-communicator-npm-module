@@ -11,24 +11,28 @@ export interface IRegistryData {
     //endpoints
     endpoints: TApiObjectT
 }
-
+//Specific dor the Registry instance options
 export interface IConfigOptions extends IOptions {
+    namespace?: string
 }
 
-//
+//Maps endpoint tokens to urls, the protocol for tokens is {path}.{to}.{resource}.{method = 'get'|'post'|'delete'}
 export type TApiObjectT = {
-    [key: string]: string
+    [token: string]: string
 }
 
-//
+//Service Registry based on Etcd , a service uploads it's endpoint's and it's url into a /services/ namespace
+//on etcd server, then another service may use.
+//Designed for north-south communication between API Gateway and microservices.
+//No inherent security mechanism.
 export class ServiceRegistry {
     etcd: Etcd3
     namespace: string = 'services/'
     // config: GatewayConfigOptions
     //util dependencies
     logger: LoggerService
-
-    constructor(config: IConfigOptions,) {
+    data: IRegistryData
+    constructor(config: IConfigOptions,data: IRegistryData) {
         this.logger = new WinstonLoggerService({
             path: "./logs",
             console: true,
@@ -40,19 +44,24 @@ export class ServiceRegistry {
             auth: config?.auth,
             credentials: config?.credentials,
         })
+        this.data = data
     }
 
-    async startService(data: IRegistryData) {
+    //notify the registry of server spin up, upload it's data for other service discovery
+    async init() {
+        const data = this.data
         const nmspc = this.etcd.namespace(this.namespace).namespace(data.refer)
         await nmspc.put('name').value(data.serviceUrl).exec()
         await nmspc.put('endpoints').value(JSON.stringify(data.endpoints)).exec()
     }
 
-    //get from registry url for endpoint {service}.{path...}.{method}
+    //get from registry url for endpoint {service}.{path...}.{method = 'get'|'post'|'delete'}
     async route(endpoint_token: string) {
         const parsed_token = endpoint_token.split('.')
+        //parse token
         const service = parsed_token[0]
         const endpoint = parsed_token.slice(1).join('.')
+        //get data from etcd
         const nmspc = this.etcd.namespace(this.namespace).namespace(service)
         const name = await nmspc.get('name')
         const endpoints = await nmspc.get('endpoints').json()
@@ -63,4 +72,7 @@ export class ServiceRegistry {
 
 
 }
+
+
+
 

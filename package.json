@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "patch": "git add . && git commit -m 'patch' && npm version patch && npm publish",
+    "patch": "git add . && git commit -m 'prepatch' && npm version patch && npm publish ",
     "prepublishOnly": "npm run build",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
