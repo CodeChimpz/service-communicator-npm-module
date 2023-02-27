@@ -54,6 +54,9 @@ export class ServiceRegistry {
 
     //notify the registry of server spin up, upload it's data for other service discovery
     async init() {
+        if(!this.data){
+            throw new Error('Trying to init but no data specified')
+        }
         const data = this.data
         const nmspc = this.etcd.namespace(this.namespace).namespace(data.refer)
         await nmspc.put('name').value(data.serviceUrl).exec()
