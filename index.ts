@@ -34,7 +34,7 @@ export class ServiceRegistry {
     logger: LoggerService
     data: IRegistryData | undefined
 
-    constructor(config: IConfigOptions, data?: IRegistryData, orientation?: 'north'|'east') {
+    constructor(config: IConfigOptions, data?: IRegistryData, namespace?: string) {
         this.logger = new WinstonLoggerService({
             path: "./logs",
             console: true,
@@ -46,15 +46,15 @@ export class ServiceRegistry {
             auth: config?.auth,
             credentials: config?.credentials,
         })
-        if(data){
+        if (data) {
             this.data = data
         }
-        this.namespace = orientation || 'north'
+        this.namespace = namespace || 'services'
     }
 
     //notify the registry of server spin up, upload it's data for other service discovery
     async init() {
-        if(!this.data){
+        if (!this.data) {
             throw new Error('Trying to init but no data specified')
         }
         const data = this.data
