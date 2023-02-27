@@ -19,7 +19,14 @@ export interface IConfigOptions extends IOptions {
 
 //Maps endpoint tokens to urls, the protocol for tokens is {path}.{to}.{resource}.{method = 'get'|'post'|'delete'}
 export type TApiObjectT = {
-    [token: string]: string
+    //north south
+    public?: {
+        [token: string]: string
+    }
+    //east west
+    private?: {
+        [token: string]: string
+    }
 }
 
 //Service Registry based on Etcd , a service uploads it's endpoint's and it's url into a /services/ namespace
@@ -63,8 +70,8 @@ export class ServiceRegistry {
         await nmspc.put('endpoints').value(JSON.stringify(data.endpoints)).exec()
     }
 
-    //get from registry url for endpoint {service}.{path...}.{method = 'get'|'post'|'delete'}
-    async route(endpoint_token: string) {
+    //get from registry the url for service endpoint for token {service}.{path...}.{method = 'get'|'post'|'delete'}, public or private
+    async route(endpoint_token: string, orient: 'north' | 'east') {
         const parsed_token = endpoint_token.split('.')
         //parse token
         const service = parsed_token[0]
@@ -74,14 +81,15 @@ export class ServiceRegistry {
         const name = await nmspc.get('name')
         const endpoints = await nmspc.get('endpoints').json()
         if (!(endpoints && name)) throw new Error('No endpoint registered for this token')
-        const path = JSON.parse(JSON.stringify(endpoints))[endpoint]
+        const where_ = orient === 'north' ? 'public' : 'private'
+        const path = JSON.parse(JSON.stringify(endpoints))[where_][endpoint]
         return name + path
     }
 
     //returns the services location for inter-service http communication
     async service(name: string) {
         const nmspc = this.etcd.namespace(this.namespace).namespace(name)
-        const url = await nmspc.get('name')
+        return nmspc.get('name')
     }
 
 
