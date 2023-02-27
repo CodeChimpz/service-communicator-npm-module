@@ -11,6 +11,7 @@ export interface IRegistryData {
     //endpoints
     endpoints: TApiObjectT
 }
+
 //Specific dor the Registry instance options
 export interface IConfigOptions extends IOptions {
     namespace?: string
@@ -23,16 +24,17 @@ export type TApiObjectT = {
 
 //Service Registry based on Etcd , a service uploads it's endpoint's and it's url into a /services/ namespace
 //on etcd server, then another service may use.
-//Designed for north-south communication between API Gateway and microservices.
+//Designed for north-south communication between API Gateway and microservices or east-west between services
 //No inherent security mechanism.
 export class ServiceRegistry {
     etcd: Etcd3
-    namespace: string = 'services/'
+    namespace: string
     // config: GatewayConfigOptions
     //util dependencies
     logger: LoggerService
     data: IRegistryData
-    constructor(config: IConfigOptions,data: IRegistryData) {
+
+    constructor(config: IConfigOptions, namespace: 'north' | 'east-west', data: IRegistryData) {
         this.logger = new WinstonLoggerService({
             path: "./logs",
             console: true,
@@ -45,6 +47,7 @@ export class ServiceRegistry {
             credentials: config?.credentials,
         })
         this.data = data
+        this.namespace = namespace
     }
 
     //notify the registry of server spin up, upload it's data for other service discovery
