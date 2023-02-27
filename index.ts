@@ -78,6 +78,12 @@ export class ServiceRegistry {
         return name + path
     }
 
+    //returns the services location for inter-service http communication
+    async service(name: string) {
+        const nmspc = this.etcd.namespace(this.namespace).namespace(name)
+        const url = await nmspc.get('name')
+    }
+
 
 }
 
