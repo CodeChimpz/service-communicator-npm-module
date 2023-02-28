@@ -131,11 +131,11 @@ export class Sidecar {
     }
 
     //An express midddleware that provides authentication by the http header Api_key
-    async registerEndpoint(req: Request, res: Response, next: NextFunction) : Promise<void>{
+    async registerEndpoint(req: Request, res: Response, next: NextFunction): Promise<void> {
         const api_key = req.headers.authorization
         //todo: should I encrypt the api_key on the side of the service ? I mean it's only stored in memory and in secrets so like idk
         if (api_key !== this.key) {
-            next(new Error('Service not authorized'))
+            res.status(401).json({message: 'Service not authorized'})
             return
         } else {
             next()
