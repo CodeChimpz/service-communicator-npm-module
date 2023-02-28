@@ -1,7 +1,7 @@
 import axios from "axios";
 import {LoggerService, WinstonLoggerService} from "mein-winston-logger";
 import {Etcd3, IOptions} from "etcd3";
-import {NextFunction, Request} from "express";
+import {NextFunction, Request, Response} from "express";
 //type / IF declarations
 //data that the service will send to the etcd registry
 export interface IRegistryData {
