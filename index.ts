@@ -23,15 +23,11 @@ export type TApiObjectT = {
     public?: {
         [token: string]: string
     }
-    //east west
-    private?: {
-        [token: string]: string
-    }
 }
 
 //Service Registry based on Etcd , a service uploads it's endpoint's and it's url into a /services/ namespace
 //on etcd server, then another service may use.
-//Designed for north-south communication between API Gateway and microservices or east-west between services
+//Designed for north-south communication between API Gateway and microservices
 //No inherent security mechanism.
 export class ServiceRegistry {
     etcd: Etcd3
@@ -71,7 +67,7 @@ export class ServiceRegistry {
     }
 
     //get from registry the url for service endpoint for token {service}.{path...}.{method = 'get'|'post'|'delete'}, public or private
-    async route(endpoint_token: string, orient: 'north' | 'east') {
+    async route(endpoint_token: string) {
         const parsed_token = endpoint_token.split('.')
         //parse token
         const service = parsed_token[0]
@@ -81,18 +77,41 @@ export class ServiceRegistry {
         const name = await nmspc.get('name')
         const endpoints = await nmspc.get('endpoints').json()
         if (!(endpoints && name)) throw new Error('No endpoint registered for this token')
-        const where_ = orient === 'north' ? 'public' : 'private'
-        const path = JSON.parse(JSON.stringify(endpoints))[where_][endpoint]
+        const path = JSON.parse(JSON.stringify(endpoints))[endpoint]
         return name + path
     }
 
-    //returns the services location for inter-service http communication
+    //returns the services location for inter-service http communication (functions as a DNS)
     async service(name: string) {
         const nmspc = this.etcd.namespace(this.namespace).namespace(name)
         return nmspc.get('name')
     }
 
 
+}
+
+//uses a Registry instance to send interservice http requests based on its' service names mappings
+export class Sidecar {
+    registry: ServiceRegistry
+
+    constructor(registry: ServiceRegistry) {
+        this.registry = registry
+    }
+
+    //sends a synch http request to a service
+    async sendRequest(name: string, endpoint: string, method: 'get' | 'post' | 'put' | 'delete', payload: any) {
+        const host = await this.registry.service(name)
+        if (!host) {
+            throw new Error('Host not found for such name on the registry')
+        }
+        const url = (host + endpoint).replace(/\/\//, '/')
+        const result = await axios.request({
+            method: method,
+            url: url,
+            data: payload
+        })
+        return result.data
+    }
 }
 
 
