@@ -1,6 +1,7 @@
 import axios from "axios";
 import {LoggerService, WinstonLoggerService} from "mein-winston-logger";
 import {Etcd3, IOptions} from "etcd3";
+import {NextFunction, Request} from "express";
 //type / IF declarations
 //data that the service will send to the etcd registry
 export interface IRegistryData {
@@ -90,16 +91,29 @@ export class ServiceRegistry {
 
 }
 
+export interface IRequestConfig {
+    name: string,
+    endpoint: string,
+    method: 'get' | 'post' | 'put' | 'delete',
+    params: {
+        API_KEY: string
+    }
+}
+
 //uses a Registry instance to send interservice http requests based on its' service names mappings
 export class Sidecar {
     registry: ServiceRegistry
+    key: string
 
-    constructor(registry: ServiceRegistry) {
+    //
+    constructor(registry: ServiceRegistry, api_key: string) {
         this.registry = registry
+        this.key = api_key
     }
 
     //sends a synch http request to a service
-    async sendRequest(name: string, endpoint: string, method: 'get' | 'post' | 'put' | 'delete', payload: any) {
+    async sendRequest(config: IRequestConfig, payload: any) {
+        const {name, method, endpoint, params} = config
         const host = await this.registry.service(name)
         if (!host) {
             throw new Error('Host not found for such name on the registry')
@@ -108,9 +122,23 @@ export class Sidecar {
         const result = await axios.request({
             method: method,
             url: url,
+            headers: {
+                Authorization: params.API_KEY
+            },
             data: payload
         })
         return result.data
+    }
+
+    //An express midddleware that provides authentication by the http header Api_key
+    registerEndpoint(req: Request, res: Response, next: NextFunction) {
+        const api_key = req.headers.authorization
+        //todo: should I encrypt the api_key on the side of the service ? I mean it's only stored in memory and in secrets so like idk
+        if (api_key !== this.key) {
+            next(new Error('Service not authorized'))
+        } else {
+            next()
+        }
     }
 }
 
