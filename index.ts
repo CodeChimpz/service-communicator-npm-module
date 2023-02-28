@@ -104,8 +104,7 @@ export class Sidecar {
         if (!host) {
             throw new Error('Host not found for such name on the registry')
         }
-        const url = (host + endpoint).replace('//', '/')
-        console.log('url',url)
+        const url = host + endpoint
         const result = await axios.request({
             method: method,
             url: url,
