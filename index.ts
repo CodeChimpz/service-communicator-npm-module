@@ -1,7 +1,9 @@
 import axios from "axios";
+import amqplib from 'amqplib'
 import {LoggerService, WinstonLoggerService} from "mein-winston-logger";
 import {Etcd3, IOptions} from "etcd3";
 import {NextFunction, Request, Response} from "express";
+import {mqLogger} from "./logger.js";
 //type / IF declarations
 //data that the service will send to the etcd registry
 export interface IRegistryData {
@@ -27,7 +29,7 @@ export type TApiObjectT = {
 }
 
 //Service Registry based on Etcd , a service uploads it's endpoint's and it's url into a /services/ namespace
-//on etcd server, then another service may use.
+//on etcd server,that then another service may use.
 //Designed for north-south communication between API Gateway and microservices
 //No inherent security mechanism.
 export class ServiceRegistry {
@@ -100,7 +102,7 @@ export interface IRequestConfig {
     }
 }
 
-//uses a Registry instance to send interservice http requests based on its' service names mappings
+//uses a Registry instance to send inter service http requests based on the registry DNS functions
 export class Sidecar {
     registry: ServiceRegistry
     key: string
@@ -141,6 +143,76 @@ export class Sidecar {
             next()
             return
         }
+    }
+}
+
+
+//used for asynchronous inter service Saga choreography
+export namespace AmqpBroker {
+    export type Connection = amqplib.Connection
+
+    export async function connect(connect: string, queueName: string) {
+        const connection = await amqplib.connect(connect)
+        return new SagaChoreographer(connection, queueName)
+    }
+
+    export type TStepHandlerFunc<T> = (content: string, connection: SagaChoreographer) => Promise<T>
+
+    export class SagaChoreographer {
+        connection: amqplib.Connection
+        queue: string
+        logger: LoggerService | undefined
+        //
+        forward = '_forward'
+        back = '_back'
+
+        constructor(connection: amqplib.Connection, queue: string) {
+            this.connection = connection
+            this.queue = queue
+        }
+
+        async registerStep(event: string, stepForward: TStepHandlerFunc<any>, stepBack: TStepHandlerFunc<any>) {
+            const ch = await this.connection.createChannel()
+            await ch.assertQueue(this.queue)
+            mqLogger.info('Asserted ', this.queue)
+            await ch.consume(this.queue, async (msg) => {
+                const content = msg?.content
+                if (!content) {
+                    return
+                }
+                const parsed = JSON.parse(content.toString())
+                try {
+                    switch (parsed.event) {
+                        case event + this.forward:
+                            await stepForward(parsed.payload, this)
+                            break
+                        case event + this.back:
+                            await stepBack(parsed.payload, this)
+                            break
+                        default:
+                            break
+                    }
+                    await ch.ack(msg)
+                } catch (e: any) {
+                    mqLogger.error(e)
+                }
+            })
+        }
+
+        async invokeStep(queue: string, event: string, direction: 'back' | 'forward', payload: any) {
+            const ch = await this.connection.createChannel()
+            await ch.assertQueue(this.queue)
+            mqLogger.info('Asserted ', this.queue)
+            const step = direction === 'forward' ? this.forward : this.back
+            const send_ = {
+                event: event + step,
+                payload: payload
+            }
+            mqLogger.info('Sending', {queue, send_})
+            ch.sendToQueue(queue, Buffer.from(JSON.stringify(send_)))
+        }
+
+
     }
 }
 
