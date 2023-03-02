@@ -156,7 +156,7 @@ export namespace AmqpBroker {
         return new SagaChoreographer(connection, queueName)
     }
 
-    export type TStepHandlerFunc<T> = (content: string, connection: SagaChoreographer) => Promise<T>
+    export type TStepHandlerFunc<T> = (content: any, connection: SagaChoreographer) => Promise<T>
 
     export class SagaChoreographer {
         connection: amqplib.Connection
