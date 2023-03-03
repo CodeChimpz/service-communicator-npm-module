@@ -234,7 +234,7 @@ export namespace HttpCommunication {
                     case CommitPhases.prepare:
                         const prepared_ = await actions.prepare(req)
                         if (!prepared_) {
-                            res.status(400).json({
+                            res.status(200).json({
                                 success: false
                             })
                             break
@@ -244,7 +244,7 @@ export namespace HttpCommunication {
                     case CommitPhases.abort:
                         const aborted_ = await actions.abort(req)
                         if (!aborted_) {
-                            res.status(400).json({
+                            res.status(200).json({
                                 success: false
                             })
                             break
@@ -254,7 +254,7 @@ export namespace HttpCommunication {
                     case CommitPhases.commit:
                         const commited_ = await actions.abort(req)
                         if (!commited_) {
-                            res.status(400).json({
+                            res.status(200).json({
                                 success: false
                             })
                             break
@@ -262,7 +262,7 @@ export namespace HttpCommunication {
                         res.status(200).json({success: true})
                         break
                     default:
-                        res.status(400).json({
+                        res.status(200).json({
                             success: false
                         })
                         break
