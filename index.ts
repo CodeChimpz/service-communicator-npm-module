@@ -190,7 +190,7 @@ export namespace HttpCommunication {
                 return false
             }
             const commited_ = await this.propagatePhase(CommitPhases.commit, participants)
-            const commit_failed = prepared_.find(success_ => !success_.success)
+            const commit_failed = commited_.find(success_ => !success_.success)
             if (commit_failed) {
                 const aborted_ = await this.propagatePhase(CommitPhases.abort, participants, commit_failed.ctx)
                 return false
@@ -211,7 +211,7 @@ export namespace HttpCommunication {
                         }
                     }
                     const {data, error} = await this.transport.sendRequest(config, {
-                        phase: CommitPhases.prepare,
+                        phase: phase,
                         data: {...participant.data, ctx: additional}
                     })
                     if (data.success !== true) {
@@ -236,7 +236,8 @@ export namespace HttpCommunication {
                 switch (phase) {
                     case CommitPhases.prepare:
                         const prepared_ = await actions.prepare(req)
-                        if (!prepared_) {
+                        logger.info(phase + ' result , success : ' + !!prepared_.success)
+                        if (!prepared_.success) {
                             res.status(200).json({
                                 success: false
                             })
@@ -246,7 +247,8 @@ export namespace HttpCommunication {
                         break
                     case CommitPhases.abort:
                         const aborted_ = await actions.abort(req)
-                        if (!aborted_) {
+                        logger.info(phase + ' result , success : ' + !!aborted_.success)
+                        if (!aborted_.success) {
                             res.status(200).json({
                                 success: false
                             })
@@ -256,6 +258,7 @@ export namespace HttpCommunication {
                         break
                     case CommitPhases.commit:
                         const commited_ = await actions.abort(req)
+                        logger.info(phase + ' result , success : ' + !!commited_.success)
                         if (!commited_) {
                             res.status(200).json({
                                 success: false
