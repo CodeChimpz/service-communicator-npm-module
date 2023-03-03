@@ -227,7 +227,7 @@ export namespace HttpCommunication {
 
         //Single endpoint Controller Factory for handling different commit phases, depends on Express
         //Runs functions and sends Request with results
-        async commitConsumerFactory(actions: Record<CommitPhases.prepare | CommitPhases.commit | CommitPhases.abort, CommitConsumer>) {
+        commitConsumerFactory(actions: Record<CommitPhases.prepare | CommitPhases.commit | CommitPhases.abort, CommitConsumer>) {
             return async function func(req: Request, res: Response) {
                 const phase = req.body.phase
                 switch (phase) {
