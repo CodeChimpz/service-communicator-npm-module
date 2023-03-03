@@ -228,8 +228,11 @@ export namespace HttpCommunication {
         //Single endpoint Controller Factory for handling different commit phases, depends on Express
         //Runs functions and sends Request with results
         commitConsumerFactory(actions: Record<CommitPhases.prepare | CommitPhases.commit | CommitPhases.abort, CommitConsumer>) {
+            const logger = this.transport.logger
             return async function func(req: Request, res: Response) {
                 const phase = req.body.phase
+                //todo: NAME
+                logger.info('Running phase', phase)
                 switch (phase) {
                     case CommitPhases.prepare:
                         const prepared_ = await actions.prepare(req)
