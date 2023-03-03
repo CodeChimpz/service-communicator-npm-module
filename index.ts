@@ -123,7 +123,7 @@ export namespace HttpCommunication {
         }
 
         //sends a sync http request to a service
-        async sendRequest(config: IRequestConfig, payload: any): Promise<{ data: any }> {
+        async sendRequest(config: IRequestConfig, payload: any): Promise<{ data: any, error?: any }> {
             const {name, method, endpoint, params} = config
             const host = await this.registry.service(name)
             if (!host) {
@@ -169,6 +169,7 @@ export namespace HttpCommunication {
 
 
     type CommitConsumer = (req: Request, ...args: any[]) => Promise<boolean> | boolean
+    type CommitCbData = { success: boolean, ctx?: any }
 
     export class TransactionSync {
         transport: Sidecar
@@ -182,23 +183,23 @@ export namespace HttpCommunication {
         //orchestrates commit phases, doesn't return data from services, only checks if commit phase ran successfully
         async twoPCommit(participants: CommitSources): Promise<boolean> {
             //prepare
-            const prepared_: boolean[] = await this.propagatePhase(CommitPhases.prepare, participants)
-            const failed = !!prepared_.find(resolved_ => !resolved_)
+            const prepared_: CommitCbData[] = await this.propagatePhase(CommitPhases.prepare, participants)
+            const failed = prepared_.find(resolved_ => !resolved_.success)
             if (failed) {
-                const aborted_ = await this.propagatePhase(CommitPhases.abort, participants)
+                const aborted_ = await this.propagatePhase(CommitPhases.abort, participants, failed.ctx)
                 return false
             }
             const commited_ = await this.propagatePhase(CommitPhases.commit, participants)
-            const commit_failed = !!prepared_.find(success_ => !success_)
+            const commit_failed = prepared_.find(success_ => !success_.success)
             if (commit_failed) {
-                const aborted_ = await this.propagatePhase(CommitPhases.abort, participants)
+                const aborted_ = await this.propagatePhase(CommitPhases.abort, participants, commit_failed.ctx)
                 return false
             }
             return true
         }
 
         // util, handles actual sending of requests
-        async propagatePhase(phase: CommitPhases, participants: CommitSources) {
+        async propagatePhase(phase: CommitPhases, participants: CommitSources, additional?: any): Promise<CommitCbData[]> {
             return Promise.all(participants.map(async (participant) => {
                 try {
                     const config: IRequestConfig = {
@@ -209,14 +210,17 @@ export namespace HttpCommunication {
                             API_KEY: participant.endpoint.auth
                         }
                     }
-                    const {data} = await this.transport.sendRequest(config, {
+                    const {data, error} = await this.transport.sendRequest(config, {
                         phase: CommitPhases.prepare,
-                        data: participant.data
+                        data: {...participant.data, ctx: additional}
                     })
-                    return data.success === true;
+                    if (data.success !== true) {
+                        return {success: false, ctx: error};
+                    }
+                    return {success: true, ctx: data};
                 } catch (e: any) {
                     this.transport.logger.error(e)
-                    return false
+                    return {success: false, ctx: 'Server error'}
                 }
             }))
         }
