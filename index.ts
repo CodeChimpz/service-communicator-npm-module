@@ -260,7 +260,7 @@ export namespace HttpCommunication {
                     case CommitPhases.commit:
                         const commited_ = await actions.abort(req)
                         logger.info(phase + ' result , success : ' + !!commited_.success)
-                        if (!commited_) {
+                        if (!commited_.success) {
                             res.status(200).json({
                                 success: false
                             })
