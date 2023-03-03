@@ -190,7 +190,6 @@ export namespace HttpCommunication {
                 return false
             }
             const commited_ = await this.propagatePhase(CommitPhases.commit, participants)
-            console.log(commited_)
             const commit_failed = commited_.find(success_ => !success_.success)
             if (commit_failed) {
                 const aborted_ = await this.propagatePhase(CommitPhases.abort, participants, commit_failed.ctx)
