@@ -168,7 +168,7 @@ export namespace HttpCommunication {
     }
 
 
-    type CommitConsumer = (req: Request, ...args: any[]) => Promise<boolean> | boolean
+    type CommitConsumer = (req: Request, ...args: any[]) => Promise<CommitCbData> | CommitCbData
     type CommitCbData = { success: boolean, ctx?: any }
 
     export class TransactionSync {
