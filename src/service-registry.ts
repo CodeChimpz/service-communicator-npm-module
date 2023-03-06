@@ -1,7 +1,7 @@
 //used for service discovery and endpoint proxying
 import {Etcd3, IOptions} from "etcd3";
 import {LoggerService, WinstonLogger, WinstonLoggerService} from "mein-winston-logger";
-import {registryLogger} from "./logger";
+import {registryLogger} from "./logger.js";
 
 //data that the service will send to the etcd registry
 export interface IRegistryData {

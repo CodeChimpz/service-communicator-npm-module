@@ -1,6 +1,6 @@
 //Used for sync HTTP communication between services
 import {WinstonLogger} from "mein-winston-logger";
-import {sidecarLogger} from "./logger";
+import {sidecarLogger} from "./logger.js";
 import axios from "axios";
 import {NextFunction, Request, Response} from "express";
 import * as EtcdRegistry from "./service-registry.js";
