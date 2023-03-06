@@ -18,3 +18,12 @@ export const sidecarLogger = new WinstonLogger({
     label: 'HTTP-SIDECAR',
     format: {color: formats.format.colorize({all: true, colors: {info: 'green', error: 'green'}})}
 })
+
+export const registryLogger = new WinstonLogger({
+    path: './logs',
+    console: true,
+    maxsize:
+        4194304,
+    label: 'SERVICE-REGISTRY',
+    format: {color: formats.format.colorize({all: true, colors: {info: 'green', error: 'green'}})}
+})
