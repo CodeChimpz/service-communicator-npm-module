@@ -165,7 +165,7 @@ export class TransactionSync {
                     res.status(200).json({success: true})
                     break
                 case CommitPhases.commit:
-                    const commited_ = await actions.abort(req)
+                    const commited_ = await actions.commit(req)
                     logger.info(phase + ' result , success : ' + !!commited_.success)
                     if (!commited_.success) {
                         res.status(200).json({
