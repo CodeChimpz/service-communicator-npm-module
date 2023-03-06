@@ -38,7 +38,7 @@ export class ServiceRegistry {
     logger: WinstonLogger
     data: IRegistryData | undefined
 
-    constructor(config: IConfigOptions, data?: IRegistryData, namespace?: string) {
+    constructor(config: IConfigOptions, data?: IRegistryData) {
         this.logger = registryLogger
         // this.config = config
         this.etcd = new Etcd3({
@@ -49,7 +49,7 @@ export class ServiceRegistry {
         if (data) {
             this.data = data
         }
-        this.namespace = namespace || 'services'
+        this.namespace = config?.namespace || 'services'
     }
 
     //notify the registry of server spin up, upload it's data for other service discovery
